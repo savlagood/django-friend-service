@@ -1,0 +1,457 @@
+openapi: 3.0.2
+info:
+  title: 'Django-сервис друзей'
+  version: '0.0.1'
+servers:
+  - url: http://127.0.0.1:8000/api/socnet/
+    description: API server
+paths:
+  /users/:
+    get:
+      tags:
+        - User
+      operationId: listUsers
+      summary: Get list of users
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Users"
+    post:
+      tags:
+        - User
+      operationId: createUser
+      summary: Create new user wuth data from request body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        '201':
+          description: Success response code with created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        '400':
+          description: Bad request. Error when creating user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          
+
+  /users/{user_id}/:
+    get:
+      tags:
+        - UserDetail
+      operationId: retrieveUserDetail
+      summary: Get detail info of user
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+      responses:
+        '200':
+          description: Detail info of user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      tags:
+        - UserDetail
+      operationId: deleteUserById
+      summary: Delete exeisting user with user_id
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+      responses:
+        '204':
+          description: No content
+          content:
+            application/json: {}
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /users/{user_id}/friends/:
+    get:
+      tags:
+        - FriendList
+      operationId: retrieveUserFriendList
+      summary: Get list of all friends of user with user_id
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+      responses:
+        '200':
+          description: Friend list of current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Users"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /users/{user_id}/friends/{friend_id}/:
+    delete:
+      tags:
+        - FriendList
+      operationId: deleteUserFriendById
+      summary: Delete user with user_id from friend list
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+        - name: friend_id
+          in: path
+          required: true
+          description: friend user ID
+          schema:
+            type: integer
+          example: 15
+      responses:
+        '204':
+          description: No content
+          content:
+            application/json: {}
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /users/{user_id}/outgoing_requests/:
+    get:
+      tags:
+        - OutgoingRequestsList
+      operationId: retrieveUserOutgoingRequestsList
+      summary: View list of outgoing friend requests
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+      responses:
+        '200':
+          description: Friend requests list of current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendRequests"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags:
+        - OutgoingRequestsList
+      operationId: createOutgoingRequest
+      summary: Creates new friend request from user with id user_id
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FriendRequest"
+      responses:
+        '201':
+          description: Success response code with created friend request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendRequest"
+        '400':
+          description: Bad request. Error when creating user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /users/{user_id}/outgoing_requests/{request_id}/:
+    delete:
+      tags:
+        - OutgoingRequestsList
+      operationId: deleteOutgoingRequestById
+      summary: Delete existing outgoing request with request_id
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+        - name: request_id
+          in: path
+          required: true
+          description: friend request ID
+          schema:
+            type: integer
+          example: 15
+      responses:
+        '204':
+          description: No content
+          content:
+            application/json: {}
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /users/{user_id}/incoming_requests/:
+    get:
+      tags:
+        - IncomingRequestsList
+      operationId: retrieveIncomingRequestsList
+      summary: View list of incoming friend requests
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+      responses:
+        '200':
+          description: incoming friend requests of current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendRequests"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /users/{user_id}/incoming_requests/{request_id}/:
+    put:
+      tags:
+        - IncomingRequestsList
+      operationId: acceptIncomingRequestById
+      summary: Accept incoming friend request with request_id
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+        - name: request_id
+          in: path
+          required: true
+          description: friend request ID
+          schema:
+            type: integer
+          example: 15
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FriendRequest'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      tags:
+        - IncomingRequestsList
+      operationId: deleteIncomingRequestById
+      summary: Reject incoming friend request with request_id
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+        - name: request_id
+          in: path
+          required: true
+          description: friend request ID
+          schema:
+            type: integer
+          example: 15
+      responses:
+        '204':
+          description: No content
+          content:
+            application/json: {}
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /users/{user_id}/friend_status/{oth_user_id}/:
+    get:
+      tags:
+        - FriendStatus
+      operationId: retrieveFriendStatus
+      summary: View relation between users
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: user ID
+          schema:
+            type: integer
+          example: 12
+        - name: oth_user_id
+          in: path
+          required: true
+          description: other user ID
+          schema:
+            type: integer
+          example: 13
+      responses:
+        '200':
+          description: Friend relation between users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - friends
+                      - outgoing request
+                      - incoming request
+                      - nothing
+                    description: Friend relations status
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: Internal server error
+    User:
+      type: object
+      required:
+        - username
+      properties:
+        id:
+          type: integer
+          example: 12
+        username:
+          type: string
+          example: petrthebest
+    Users:
+      type: array
+      items:
+        $ref: "#/components/schemas/User"
+    FriendRequest:
+      type: object
+      required:
+        - to_user
+      properties:
+        id:
+          type: integer
+          example: 3
+        from_user:
+          type: integer
+          description: user ID
+          example: 4
+        to_user:
+          type: integer
+          description: user ID
+          example: 1
+    FriendRequests:
+      type: array
+      items:
+        $ref: "#/components/schemas/FriendRequest"
+    UserDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        username:
+          type: string
+          example: petrthebest
+        friends:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        outgoing_requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/FriendRequest"
+        incoming_requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/FriendRequest"
+    
+
+  
