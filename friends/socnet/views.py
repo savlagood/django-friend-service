@@ -50,7 +50,7 @@ class UserDetailView(APIView):
 		return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class FriendsListView(APIView):
+class FriendListView(APIView):
 	"""View list of user friends"""
 
 	def get(self, request, user_id):
@@ -80,7 +80,7 @@ class FriendDeleteView(APIView):
 
 
 
-class OutgoingFriendRequestsListView(APIView):
+class OutgoingRequestListView(APIView):
 	"""List of all outgoing requests with request_id, or create new"""
 
 	def get(self, request, user_id):
@@ -110,7 +110,7 @@ class OutgoingFriendRequestsListView(APIView):
 		return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class OutgoingFriendRequestsDeleteView(APIView):
+class OutgoingRequestDeleteView(APIView):
 	"""Delete existing outgoing request with request_id"""
 
 	def delete(self, request, user_id, request_id):
@@ -121,7 +121,7 @@ class OutgoingFriendRequestsDeleteView(APIView):
 
 
 
-class IncomingFriendRequestsListView(APIView):
+class IncomingRequestListView(APIView):
 	"""List of all incoming friend requests"""
 
 	def get(self, request, user_id):
@@ -133,7 +133,7 @@ class IncomingFriendRequestsListView(APIView):
 		return Response(serializer.data)
 
 
-class IncomingFriendRequestsDetailView(APIView):
+class IncomingRequestDetailView(APIView):
 	"""Accept new friend request, or reject existing"""
 
 	def put(self, request, user_id, request_id):

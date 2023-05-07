@@ -99,7 +99,7 @@ paths:
   /users/{user_id}/friends/:
     get:
       tags:
-        - UserFriendList
+        - FriendList
       operationId: retrieveUserFriendList
       summary: Get list of all friends of user with user_id
       parameters:
@@ -126,7 +126,7 @@ paths:
   /users/{user_id}/friends/{friend_id}/:
     delete:
       tags:
-        - UserFriendList
+        - FriendList
       operationId: deleteUserFriendById
       summary: Delete user with user_id from friend list
       parameters:
@@ -158,7 +158,7 @@ paths:
   /users/{user_id}/outgoing_requests/:
     get:
       tags:
-        - UserOutgoingRequestsList
+        - OutgoingRequestsList
       operationId: retrieveUserOutgoingRequestsList
       summary: View list of outgoing friend requests
       parameters:
@@ -184,7 +184,7 @@ paths:
                 $ref: "#/components/schemas/Error"
     post:
       tags:
-        - UserOutgoingRequestsList
+        - OutgoingRequestsList
       operationId: createOutgoingRequest
       summary: Creates new friend request from user with id user_id
       parameters:
@@ -223,7 +223,7 @@ paths:
   /users/{user_id}/outgoing_requests/{request_id}/:
     delete:
       tags:
-        - UserOutgoingRequestsList
+        - OutgoingRequestsList
       operationId: deleteOutgoingRequestById
       summary: Delete existing outgoing request with request_id
       parameters:
@@ -414,7 +414,6 @@ components:
     FriendRequest:
       type: object
       required:
-        - from_user
         - to_user
       properties:
         id:
@@ -453,3 +452,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FriendRequest"
+    
+
+  
