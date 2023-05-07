@@ -29,47 +29,51 @@ class UserListView(APIView):
 
 			return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
 
-		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-	def delete(self, request):
-		"""Delete exeisting user with user_id from request"""
-		user = get_user(request.data.get('user_id'))
-		user.delete()
-
-		return Response(status=status.HTTP_204_NO_CONTENT)
+		return Response({"detail": "This field may not be blank."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserDetailView(APIView):
 	"""View detail info of user"""
 
-	def get(self, request, user_pk):
-		"""Get detail info of user with user_pk"""
-		user = get_user(user_pk)
+	def get(self, request, user_id):
+		"""Get detail info of user with user_id"""
+		user = get_user(user_id)
 		serializer = UserDetailSerializer(user)
 
 		return Response(serializer.data)
 
+	def delete(self, request, user_id):
+		"""Delete exeisting user with user_id"""
+		user = get_user(user_id)
+		user.delete()
+
+		return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class FriendsListView(APIView):
-	"""View list of user friends, or delete user from friend list"""
+	"""View list of user friends"""
 
-	def get(self, request, user_pk):
-		"""Get list of all friends of user with user_pk"""
-		user = get_user(user_pk)
+	def get(self, request, user_id):
+		"""Get list of all friends of user with user_id"""
+		user = get_user(user_id)
 		friends = user.get_friends()
 		serializer = UserListSerializer(friends, many=True)
 
 		return Response(serializer.data)
 
-	def post(self, request, user_pk):
-		"""Delete user with user_id from friend list"""
-		user = get_user(user_pk)
-		to_user = get_user(request.data.get('user_id'))
+
+class FriendDeleteView(APIView):
+	"""Delete user from friend list"""
+
+	def delete(self, request, user_id, friend_id):
+		"""Delete user with friend_id from friend list"""
+		user = get_user(user_id)
+		to_user = get_user(friend_id)
 
 		try:
 			req = FriendRequest.objects.get(from_user=user, to_user=to_user)
 		except:
-			return Response(status=status.HTTP_400_BAD_REQUEST)
+			return Response({"detail": "friend not found"}, status=status.HTTP_404_BAD_REQUEST)
 
 		req.delete()
 		return Response(status=status.HTTP_204_NO_CONTENT)
@@ -77,24 +81,24 @@ class FriendsListView(APIView):
 
 
 class OutgoingFriendRequestsListView(APIView):
-	"""List of all outgoing requests with request_id, or create new, or delete existing"""
+	"""List of all outgoing requests with request_id, or create new"""
 
-	def get(self, request, user_pk):
+	def get(self, request, user_id):
 		"""View list of outgoing friend requests"""
-		user = get_user(user_pk)
+		user = get_user(user_id)
 		outgoing_requests = FriendRequest.objects.filter(from_user=user)
 		serializer = FriendRequestSerializer(outgoing_requests, many=True)
 
 		return Response(serializer.data)
 
 
-	def post(self, request, user_pk):
-		"""Creates new friend request from user with id user_pk"""
+	def post(self, request, user_id):
+		"""Creates new friend request from user with id user_id"""
 		to_user = get_user(request.data.get("user_id"))
-		user = get_user(user_pk)
+		user = get_user(user_id)
 
 		if to_user.id == user.id:
-			return Response({'error': 'The user cannot send a friend request to himself'}, status=status.HTTP_400_BAD_REQUEST)
+			return Response({'detail': 'The user cannot send a friend request to himself'}, status=status.HTTP_400_BAD_REQUEST)
 
 		if req := FriendRequest.objects.filter(from_user=user, to_user=to_user):
 			serializer = FriendRequestSerializer(req[0])
@@ -106,32 +110,38 @@ class OutgoingFriendRequestsListView(APIView):
 		return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-	def delete(self, request, user_pk):
+class OutgoingFriendRequestsDeleteView(APIView):
+	"""Delete existing outgoing request with request_id"""
+
+	def delete(self, request, user_id, request_id):
 		"""Deletes friend request with request_id from request"""
-		req = get_friend_request(request.data.get('request_id'))
+		req = get_friend_request(request_id)
 		req.delete()
 		return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 
 class IncomingFriendRequestsListView(APIView):
-	"""List of all incoming friend requests, or accept new, or reject existing"""
+	"""List of all incoming friend requests"""
 
-	def get(self, request, user_pk):
-		"""GET to view list of incoming friend requests"""
-		user = get_user(user_pk)
+	def get(self, request, user_id):
+		"""View list of incoming friend requests"""
+		user = get_user(user_id)
 		incoming_requests = FriendRequest.objects.filter(to_user=user)
 		serializer = FriendRequestSerializer(incoming_requests, many=True)
 
 		return Response(serializer.data)
 
-	def post(self, request, user_pk):
-		"""POST to accept incoming friend request with request_id"""
-		req = get_friend_request(request.data.get('request_id'))
-		# out_req = FriendRequest(from_user=req.to_user, to_user=req.from_user)
+
+class IncomingFriendRequestsDetailView(APIView):
+	"""Accept new friend request, or reject existing"""
+
+	def put(self, request, user_id, request_id):
+		"""Accept incoming friend request with request_id"""
+		req = get_friend_request(request_id)
 
 		if FriendRequest.objects.filter(from_user=req.to_user, to_user=req.from_user):
-			return Response({'error': 'already in friends'}, status=status.HTTP_400_BAD_REQUEST)
+			return Response({'detail': 'already in friends'}, status=status.HTTP_400_BAD_REQUEST)
 
 		out_req = FriendRequest(from_user=req.to_user, to_user=req.from_user)
 		out_req.save()
@@ -139,11 +149,12 @@ class IncomingFriendRequestsListView(APIView):
 		serializer = FriendRequestSerializer(out_req)
 		return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-	def delete(self, request, user_pk):
-		"""DELETE to reject incoming friend request with request_id"""
-		req = get_friend_request(request.data.get('request_id'))
+	def delete(self, request, user_id, request_id):
+		"""Reject incoming friend request with request_id"""
+		req = get_friend_request(request_id)
 		req.delete()
 		return Response(status=status.HTTP_204_NO_CONTENT)
+
 		
 
 
@@ -156,10 +167,10 @@ class FriendRelationView(APIView):
 	- nothing
 	"""
 
-	def get(self, request, user_pk, oth_user_pk):
+	def get(self, request, user_id, oth_user_id):
 		"""View relation between users"""
-		user = get_user(user_pk)
-		oth_user = get_user(oth_user_pk)
+		user = get_user(user_id)
+		oth_user = get_user(oth_user_id)
 
 		if (FriendRequest.objects.filter(from_user=user, to_user=oth_user) and
 				FriendRequest.objects.filter(from_user=oth_user, to_user=user)):
