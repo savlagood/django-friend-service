@@ -3,6 +3,8 @@ from django.urls import path
 from . import views
 
 
+app_name = "socnet"
+
 urlpatterns = [
 	path('users/', views.UserListView.as_view(), name='user-list'),
 	path('users/<int:user_id>/', views.UserDetailView.as_view(), name='user-detail'),
