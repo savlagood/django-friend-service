@@ -112,7 +112,7 @@ class UserDetailViewTest(APITestCase):
 		self.assertEqual(list(response.json().keys()), ['detail'])
 
 
-class FriendListView(APITestCase):
+class FriendListViewTest(APITestCase):
 
 	def get_url(self, user_id):
 		return reverse('socnet:friend-list', kwargs={'user_id': user_id})
@@ -162,3 +162,46 @@ class FriendListView(APITestCase):
 
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 		self.assertEqual(list(response.json().keys()), ['detail'])
+
+
+class FriendDeleteViewTest(APITestCase):
+
+	def get_url(self, user_id, friend_id):
+		return reverse('socnet:firend-delete', kwargs={'user_id': user_id,
+													 'friend_id': friend_id})
+
+	def create_users_and_requests(self):
+		self.user1 = User(username="Andrew")
+		self.user2 = User(username="Pavel")
+		self.user3 = User(username="Elon")
+
+		self.user1.save()
+		self.user2.save()
+		self.user3.save()
+
+		FriendRequest(from_user=self.user1, to_user=self.user2).save()
+		FriendRequest(from_user=self.user2, to_user=self.user1).save()
+		FriendRequest(from_user=self.user2, to_user=self.user1).save()
+
+	def test_delete_method(self):
+		self.create_users_and_requests()
+
+		response = self.client.delete(self.get_url(self.user1.id, self.user1.get_friends()[0].id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 2)
+
+		self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+		self.assertEqual(response.data, None)
+
+	def test_delete_method_empty_user(self):
+		self.create_users_and_requests()
+
+		response = self.client.delete(self.get_url(self.user1.id, 122))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
