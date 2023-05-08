@@ -1,0 +1,11 @@
+.git/
+venv/
+friends/socnet/migrations/
+**/__pycache__/
+
+.dockerignore
+.gitignore
+openapi-schema.yml
+README.md
+
+friends/db.sqlite3

@@ -1,14 +1,15 @@
 # Django сервис друзей
 _Сдлано на django-rest-framework_
-## Установка
+## Установка и запуск
 1. Клонируем проект `git clone https://github.com/savlagood/django-friend-service.git`
-2. Создаем виртуальное окружение `python -m venv venv` и активируем его `venv\Scripts\activate` (_пример для Windows_)
-3. Устанавливаем зависимости `pip install -r requirements.txt`
-## Запуск
-Переходим в папку **friends** и запускаем сервер `python manage.py runserver`
+2. Собираем докер образ, а затем запускаем его:
+```
+docker build . vk-friends
+docker run -d -p 8090:8000 --tag vk-friends
+```
 ## Примеры использования
 Подробная спецификация по использованию лежит в файле `openapi-schema.yml`. Здесь приведем лишь несколько примеров:
-1. GET http://127.0.0.1/api/socnet/users/ - получим список пользователей, например:
+1. GET http://127.0.0.1:8090/api/socnet/users/ - получим список пользователей, например:
 ```
 [
     {
@@ -25,7 +26,7 @@ _Сдлано на django-rest-framework_
     }
 ]
 ```
-2. POST http://127.0.0.1/api/socnet/users/ - отправив подобный запрос с телом:
+2. POST http://127.0.0.1:8090/api/socnet/users/ - отправив подобный запрос с телом:
 ```
 {"username": "kate"}
 ```
