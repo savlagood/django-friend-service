@@ -42,3 +42,14 @@ docker run -d -p 8090:8000 --tag vk-friends
 ```
 
 Остальные примеры есть в OpenAPI спецификации
+## Тестирование
+Для запуска unit-тестов нужно создать и активировать виртуальное окружение, затем установить все зависимости:
+```
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+Затем из директории friends запустить тесты:
+```
+python manage.py test socnet
+```
