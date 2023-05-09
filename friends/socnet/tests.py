@@ -167,8 +167,8 @@ class FriendListViewTest(APITestCase):
 class FriendDeleteViewTest(APITestCase):
 
 	def get_url(self, user_id, friend_id):
-		return reverse('socnet:firend-delete', kwargs={'user_id': user_id,
-													 'friend_id': friend_id})
+		return reverse('socnet:firend-delete',
+						kwargs={'user_id': user_id, 'friend_id': friend_id})
 
 	def create_users_and_requests(self):
 		self.user1 = User(username="Andrew")
@@ -181,7 +181,7 @@ class FriendDeleteViewTest(APITestCase):
 
 		FriendRequest(from_user=self.user1, to_user=self.user2).save()
 		FriendRequest(from_user=self.user2, to_user=self.user1).save()
-		FriendRequest(from_user=self.user2, to_user=self.user1).save()
+		FriendRequest(from_user=self.user2, to_user=self.user3).save()
 
 	def test_delete_method(self):
 		self.create_users_and_requests()
@@ -217,5 +217,391 @@ class FriendDeleteViewTest(APITestCase):
 		self.assertEqual(list(response.json().keys()), ['detail'])
 
 
-# class 
+class OutgoingRequestListViewTest(APITestCase):
 
+	def get_url(self, user_id):
+		return reverse('socnet:outgoing-request-list', kwargs={'user_id': user_id})
+
+	def create_users_and_requests(self):
+		self.user1 = User(username="Andrew")
+		self.user2 = User(username="Pavel")
+		self.user3 = User(username="Elon")
+
+		self.user1.save()
+		self.user2.save()
+		self.user3.save()
+
+		FriendRequest(from_user=self.user1, to_user=self.user2).save()
+		FriendRequest(from_user=self.user2, to_user=self.user1).save()
+		FriendRequest(from_user=self.user2, to_user=self.user3).save()
+
+	def test_get_method(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user2.id))
+		friend_request = FriendRequest.objects.get(from_user=self.user2, to_user=self.user3)
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.json(), [{
+			'id': friend_request.id,
+			'from_user': friend_request.from_user.id,
+			'to_user': friend_request.to_user.id,
+		}])
+
+	def test_get_method_no_requests(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user1.id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.json(), [])
+
+	def test_get_method_no_user(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user3.id + 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+	def test_post_method(self):
+		self.create_users_and_requests()
+
+		response = self.client.post(self.get_url(self.user1.id), {'user_id': self.user3.id}, format='json')
+		friend_request = FriendRequest.objects.get(from_user=self.user1, to_user=self.user3)
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 4)
+
+		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		self.assertEqual(response.json(), {
+			'id': friend_request.id,
+			'from_user': friend_request.from_user.id,
+			'to_user': friend_request.to_user.id,
+		})
+
+	def test_post_method_user1_with_user1(self):
+		self.create_users_and_requests()
+
+		response = self.client.post(self.get_url(self.user1.id), {'user_id': self.user1.id}, format='json')
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+	def test_post_method_no_user(self):
+		self.create_users_and_requests()
+
+		response = self.client.post(self.get_url(self.user3.id + 256), {'user_id': self.user3.id}, format='json')
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+
+class OutgoingRequestDeleteViewTest(APITestCase):
+
+	def get_url(self, user_id, request_id):
+		return reverse('socnet:outgoing-request-delete', kwargs={'user_id': user_id, 'request_id': request_id})
+
+	def create_users_and_requests(self):
+		self.user1 = User(username="Andrew")
+		self.user2 = User(username="Pavel")
+		self.user3 = User(username="Elon")
+
+		self.user1.save()
+		self.user2.save()
+		self.user3.save()
+
+		FriendRequest(from_user=self.user1, to_user=self.user2).save()
+		FriendRequest(from_user=self.user2, to_user=self.user1).save()
+		FriendRequest(from_user=self.user2, to_user=self.user3).save()
+
+	def test_delete_method(self):
+		self.create_users_and_requests()
+
+		friend_request = FriendRequest.objects.get(from_user=self.user2, to_user=self.user3)
+		response = self.client.delete(self.get_url(self.user1.id, friend_request.id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 2)
+
+		self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+		self.assertEqual(response.data, None)
+
+	def test_delete_method_no_request(self):
+		self.create_users_and_requests()
+
+		response = self.client.delete(self.get_url(self.user1.id, 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+	def test_delete_method_no_user(self):
+		self.create_users_and_requests()
+
+		response = self.client.delete(self.get_url(256, 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+
+class IncomingRequestListViewTest(APITestCase):
+
+	def get_url(self, user_id):
+		return reverse('socnet:incoming-request-list', kwargs={'user_id': user_id})
+
+	def create_users_and_requests(self):
+		self.user1 = User(username="Andrew")
+		self.user2 = User(username="Pavel")
+		self.user3 = User(username="Elon")
+
+		self.user1.save()
+		self.user2.save()
+		self.user3.save()
+
+		FriendRequest(from_user=self.user1, to_user=self.user2).save()
+		FriendRequest(from_user=self.user2, to_user=self.user1).save()
+		FriendRequest(from_user=self.user2, to_user=self.user3).save()
+
+	def test_get_method(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user3.id))
+		friend_request = FriendRequest.objects.get(from_user=self.user2, to_user=self.user3)
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.json(), [{
+			'id': friend_request.id,
+			'from_user': friend_request.from_user.id,
+			'to_user': friend_request.to_user.id,
+		}])
+
+	def test_get_method_no_requests(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user1.id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.json(), [])
+
+	def test_get_method_no_user(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user3.id + 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+
+class IncomingRequestDetailViewTest(APITestCase):
+
+	def get_url(self, user_id, request_id):
+		return reverse('socnet:incoming-request-detail', kwargs={'user_id': user_id, 'request_id': request_id})
+
+	def create_users_and_requests(self):
+		self.user1 = User(username="Andrew")
+		self.user2 = User(username="Pavel")
+		self.user3 = User(username="Elon")
+
+		self.user1.save()
+		self.user2.save()
+		self.user3.save()
+
+		FriendRequest(from_user=self.user1, to_user=self.user2).save()
+		FriendRequest(from_user=self.user2, to_user=self.user1).save()
+		FriendRequest(from_user=self.user2, to_user=self.user3).save()
+
+	def test_put_method(self):
+		self.create_users_and_requests()
+
+		friend_request = FriendRequest.objects.get(from_user=self.user2, to_user=self.user3)
+		response = self.client.put(self.get_url(self.user3.id, friend_request.id))
+		accepted_friend_request = FriendRequest.objects.get(from_user=self.user3, to_user=self.user2)
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 4)
+
+		self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+		self.assertEqual(response.json(), {
+			'id': accepted_friend_request.id,
+			'from_user': accepted_friend_request.from_user.id,
+			'to_user': accepted_friend_request.to_user.id,
+		})
+
+	def test_put_method_no_request(self):
+		self.create_users_and_requests()
+
+		response = self.client.put(self.get_url(self.user3.id, 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+	def test_put_method_no_user(self):
+		self.create_users_and_requests()
+
+		response = self.client.put(self.get_url(256, 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+	def test_delete_method(self):
+		self.create_users_and_requests()
+
+		friend_request = FriendRequest.objects.get(from_user=self.user2, to_user=self.user3)
+		response = self.client.delete(self.get_url(self.user3.id, friend_request.id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 2)
+
+		self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+		self.assertEqual(response.data, None)
+
+	def test_delete_method_no_request(self):
+		self.create_users_and_requests()
+
+		response = self.client.delete(self.get_url(self.user3.id, 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+	def test_delete_method_no_user(self):
+		self.create_users_and_requests()
+
+		response = self.client.delete(self.get_url(256, 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+
+class FriendRelationViewTest(APITestCase):
+
+	def get_url(self, user_id, oth_user_id):
+		return reverse('socnet:friend-relation', kwargs={'user_id': user_id, 'oth_user_id': oth_user_id})
+
+	def create_users_and_requests(self):
+		self.user1 = User(username="Andrew")
+		self.user2 = User(username="Pavel")
+		self.user3 = User(username="Elon")
+
+		self.user1.save()
+		self.user2.save()
+		self.user3.save()
+
+		FriendRequest(from_user=self.user1, to_user=self.user2).save()
+		FriendRequest(from_user=self.user2, to_user=self.user1).save()
+		FriendRequest(from_user=self.user2, to_user=self.user3).save()
+
+	def test_get_method_friends(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user1.id, self.user2.id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.json(), {
+			'status': 'friends'
+		})
+
+	def test_get_method_outgoing_request(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user2.id, self.user3.id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.json(), {
+			'status': 'outgoing request'
+		})
+
+	def test_get_method_incoming_request(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user3.id, self.user2.id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.json(), {
+			'status': 'incoming request'
+		})
+
+	def test_get_method_nothing(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user1.id, self.user3.id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.json(), {
+			'status': 'nothing'
+		})
+
+	def test_get_method_no_oth_user(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(self.user1.id, 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+	def test_get_method_no_user(self):
+		self.create_users_and_requests()
+
+		response = self.client.get(self.get_url(256, 256))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])

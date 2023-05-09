@@ -86,7 +86,12 @@ class OutgoingRequestListView(APIView):
 	def get(self, request, user_id):
 		"""View list of outgoing friend requests"""
 		user = get_user(user_id)
-		outgoing_requests = FriendRequest.objects.filter(from_user=user)
+
+		outgoing_requests = []
+		for req in FriendRequest.objects.filter(from_user=user):
+			if not FriendRequest.objects.filter(from_user=req.to_user, to_user=req.from_user):
+				outgoing_requests.append(req)
+
 		serializer = FriendRequestSerializer(outgoing_requests, many=True)
 
 		return Response(serializer.data)
@@ -127,7 +132,12 @@ class IncomingRequestListView(APIView):
 	def get(self, request, user_id):
 		"""View list of incoming friend requests"""
 		user = get_user(user_id)
-		incoming_requests = FriendRequest.objects.filter(to_user=user)
+
+		incoming_requests = []
+		for req in FriendRequest.objects.filter(to_user=user):
+			if not FriendRequest.objects.filter(from_user=req.to_user, to_user=req.from_user):
+				incoming_requests.append(req)
+
 		serializer = FriendRequestSerializer(incoming_requests, many=True)
 
 		return Response(serializer.data)
