@@ -205,3 +205,17 @@ class FriendDeleteViewTest(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 		self.assertEqual(list(response.json().keys()), ['detail'])
 
+	def test_delete_method_non_friend(self):
+		self.create_users_and_requests()
+
+		response = self.client.delete(self.get_url(self.user1.id, self.user3.id))
+
+		self.assertEqual(User.objects.count(), 3)
+		self.assertEqual(FriendRequest.objects.count(), 3)
+
+		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+		self.assertEqual(list(response.json().keys()), ['detail'])
+
+
+# class 
+

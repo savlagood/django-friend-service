@@ -73,7 +73,7 @@ class FriendDeleteView(APIView):
 		try:
 			req = FriendRequest.objects.get(from_user=user, to_user=to_user)
 		except:
-			return Response({"detail": "friend not found"}, status=status.HTTP_404_BAD_REQUEST)
+			return Response({"detail": "friend not found"}, status=status.HTTP_404_NOT_FOUND)
 
 		req.delete()
 		return Response(status=status.HTTP_204_NO_CONTENT)
